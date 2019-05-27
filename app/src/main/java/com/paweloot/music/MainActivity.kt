@@ -1,24 +1,44 @@
 package com.paweloot.music
 
 import android.Manifest
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.database.Cursor
 import android.os.Bundle
-import com.google.android.material.snackbar.Snackbar
-import androidx.appcompat.app.AppCompatActivity
+import android.os.IBinder
+import android.os.PersistableBundle
+import android.provider.MediaStore.Audio
 import android.view.Menu
 import android.view.MenuItem
-
-import kotlinx.android.synthetic.main.activity_main.*
-import android.provider.MediaStore
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import kotlinx.android.synthetic.main.content_main.*
-import android.provider.MediaStore.Audio
+import com.google.android.material.snackbar.Snackbar
+import com.paweloot.music.MusicPlayerService.LocalBinder
+import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
     private val songsList: ArrayList<Song> = ArrayList()
+    private lateinit var musicPlayerService: MusicPlayerService
+    private var isServiceBound: Boolean = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val binder = service as LocalBinder
+            musicPlayerService = binder.service
+            isServiceBound = true
+
+            Toast.makeText(this@MainActivity, "Service Bound", Toast.LENGTH_SHORT).show()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            isServiceBound = false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,45 +53,42 @@ class MainActivity : AppCompatActivity() {
         checkReadStoragePermission()
 
         loadSongs()
+        playSong(songsList[13].dataPath)
+    }
+
+    private fun playSong(songFilePath: String) {
+        if (!isServiceBound) {
+            val intent = Intent(this, MusicPlayerService::class.java)
+            intent.putExtra(SONG_FILE_PATH, songFilePath)
+
+            startService(intent)
+            bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+        } else {
+
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
+        if (isServiceBound) {
+            unbindService(serviceConnection)
+            musicPlayerService.stopSelf()
+        }
+    }
 
 
+    override fun onSaveInstanceState(outState: Bundle?) {
+        outState?.putBoolean(SERVICE_BOUND_STATE, isServiceBound)
 
-//        val selection = Audio.Media.IS_MUSIC + " != 0"
-//
-//        val projection = arrayOf(
-//            Audio.Media._ID,
-//            Audio.Media.ARTIST,
-//            Audio.Media.TITLE,
-//            Audio.Media.DATA,
-//            Audio.Media.DISPLAY_NAME,
-//            Audio.Media.DURATION
-//        )
-//
-//        val cursor: Cursor? = contentResolver.query(
-//            Audio.Media.EXTERNAL_CONTENT_URI,
-//            projection,
-//            selection,
-//            null, null
-//        )
-//
-////        cursor = this.managedQuery(
-////            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-////            projection,
-////            selection,
-////            null, null
-////        )
-//
-//        val songs = ArrayList<String>()
-//        if (cursor != null) {
-//            while (cursor.moveToNext()) {
-////                songs.add(
-////                    cursor.getString(0) + "||" + cursor.getString(1) + "||" + cursor.getString(2) + "||" + cursor.getString(
-////                        3
-////                    ) + "||" + cursor.getString(4) + "||" + cursor.getString(5)
-////                )
-//                songs.add(cursor.getString(3) + "\n")
-//            }
-//        }
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle?) {
+        super.onRestoreInstanceState(savedInstanceState)
+
+        val savedServiceBoundState = savedInstanceState?.getBoolean(SERVICE_BOUND_STATE)
+        isServiceBound = savedServiceBoundState ?: false
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
