@@ -8,21 +8,16 @@ import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.IBinder
-import android.os.PersistableBundle
 import android.provider.MediaStore.Audio
-import android.view.Menu
-import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.google.android.material.snackbar.Snackbar
 import com.paweloot.music.MusicPlayerService.LocalBinder
-import kotlinx.android.synthetic.main.activity_main.*
 
 
 class MainActivity : AppCompatActivity() {
-    private val songsList: ArrayList<Song> = ArrayList()
+    val songsList: ArrayList<Song> = ArrayList()
     private lateinit var musicPlayerService: MusicPlayerService
     private var isServiceBound: Boolean = false
 
@@ -43,23 +38,15 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setSupportActionBar(toolbar)
-
-        fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
-        }
 
         checkReadStoragePermission()
-
         loadSongs()
-        playSong(songsList[13].dataPath)
     }
 
-    private fun playSong(songFilePath: String) {
+    fun playSong(songIndex: Int) {
         if (!isServiceBound) {
             val intent = Intent(this, MusicPlayerService::class.java)
-            intent.putExtra(SONG_FILE_PATH, songFilePath)
+            intent.putExtra(SONG_FILE_PATH, songsList[songIndex].dataPath)
 
             startService(intent)
             bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
@@ -89,22 +76,6 @@ class MainActivity : AppCompatActivity() {
 
         val savedServiceBoundState = savedInstanceState?.getBoolean(SERVICE_BOUND_STATE)
         isServiceBound = savedServiceBoundState ?: false
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        menuInflater.inflate(R.menu.menu_main, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        return when (item.itemId) {
-            R.id.action_settings -> true
-            else -> super.onOptionsItemSelected(item)
-        }
     }
 
     private fun loadSongs() {
