@@ -1,6 +1,7 @@
 package com.paweloot.music
 
 import android.Manifest
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ComponentName
@@ -8,9 +9,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.opengl.Visibility
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
+import android.provider.MediaStore
 import android.provider.MediaStore.Audio
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -19,10 +22,12 @@ import androidx.core.content.ContextCompat
 import com.paweloot.music.MusicPlayerService.LocalBinder
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
     val songsData: JSONArray = JSONArray()
+    private val albumsData: HashMap<Int, String?> = HashMap()
     private lateinit var musicPlayerService: MusicPlayerService
     private var isServiceBound: Boolean = false
 
@@ -47,6 +52,8 @@ class MainActivity : AppCompatActivity() {
         createNotificationChannel()
         checkReadStoragePermission()
         loadSongs()
+        loadAlbumCovers()
+        joinSongsDataAndAlbumCovers()
     }
 
     fun playSong(songIndex: Int) {
@@ -58,7 +65,7 @@ class MainActivity : AppCompatActivity() {
 
             val intent = Intent(this, MusicPlayerService::class.java)
 
-            startService(intent)
+            startForegroundService(intent)
             bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         } else {
             dataManager.saveCurrentSongIndex(songIndex)
@@ -96,7 +103,8 @@ class MainActivity : AppCompatActivity() {
             Audio.Media.DATA,
             Audio.Media.TITLE,
             Audio.Media.ALBUM,
-            Audio.Media.ARTIST
+            Audio.Media.ARTIST,
+            Audio.Media.ALBUM_ID
         )
         val selection = Audio.Media.IS_MUSIC + " != 0"
         val sort = Audio.Media.TITLE + " ASC"
@@ -113,6 +121,7 @@ class MainActivity : AppCompatActivity() {
                 val title = cursor.getString(1)
                 val album = cursor.getString(2)
                 val artist = cursor.getString(3)
+                val albumId = cursor.getString(4)
 
                 songsData.put(
                     JSONObject(
@@ -120,7 +129,8 @@ class MainActivity : AppCompatActivity() {
                             DATA_PATH to data,
                             TITLE to title,
                             ALBUM to album,
-                            ARTIST to artist
+                            ARTIST to artist,
+                            ALBUM_ID to albumId
                         )
                     )
                 )
@@ -130,13 +140,50 @@ class MainActivity : AppCompatActivity() {
         cursor?.close()
     }
 
+    private fun loadAlbumCovers() {
+        val projection = arrayOf(
+            Audio.Albums._ID,
+            Audio.Albums.ALBUM_ART
+        )
+
+        val cursor = contentResolver.query(
+            Audio.Albums.EXTERNAL_CONTENT_URI,
+            projection,
+            null,
+            null,
+            null
+        )
+
+        if (cursor != null && cursor.count > 0) {
+            while (cursor.moveToNext()) {
+                val albumId = cursor.getString(0)
+                val albumArt = cursor.getString(1)
+
+                albumsData[albumId.toInt()] = albumArt
+            }
+        }
+
+        cursor?.close()
+    }
+
+    private fun joinSongsDataAndAlbumCovers() {
+        for (i in 0 until songsData.length()) {
+            val song = songsData.getJSONObject(i)
+            val albumId = song.getString(ALBUM_ID)
+
+            song.put(ALBUM_ART, albumsData[albumId.toInt()])
+        }
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = getString(R.string.channel_name)
             val descriptionText = getString(R.string.channel_description)
             val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel("MusicPlayer", name, importance).apply {
+            val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
                 description = descriptionText
+                setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
 
             val notificationManager: NotificationManager =
