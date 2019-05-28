@@ -1,11 +1,14 @@
 package com.paweloot.music
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.provider.MediaStore.Audio
@@ -14,10 +17,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.paweloot.music.MusicPlayerService.LocalBinder
+import org.json.JSONArray
+import org.json.JSONObject
 
 
 class MainActivity : AppCompatActivity() {
-    val songsList: ArrayList<Song> = ArrayList()
+    val songsData: JSONArray = JSONArray()
     private lateinit var musicPlayerService: MusicPlayerService
     private var isServiceBound: Boolean = false
 
@@ -39,19 +44,27 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        createNotificationChannel()
         checkReadStoragePermission()
         loadSongs()
     }
 
     fun playSong(songIndex: Int) {
+        val dataManager = SongsDataManager(this)
+
         if (!isServiceBound) {
+            dataManager.saveSongsData(songsData)
+            dataManager.saveCurrentSongIndex(songIndex)
+
             val intent = Intent(this, MusicPlayerService::class.java)
-            intent.putExtra(SONG_FILE_PATH, songsList[songIndex].dataPath)
 
             startService(intent)
             bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         } else {
+            dataManager.saveCurrentSongIndex(songIndex)
 
+            val broadcast = Intent(BROADCAST_PLAY_NEW_SONG)
+            sendBroadcast(broadcast)
         }
     }
 
@@ -101,11 +114,35 @@ class MainActivity : AppCompatActivity() {
                 val album = cursor.getString(2)
                 val artist = cursor.getString(3)
 
-                songsList.add(Song(data, title, album, artist))
+                songsData.put(
+                    JSONObject(
+                        mapOf(
+                            DATA_PATH to data,
+                            TITLE to title,
+                            ALBUM to album,
+                            ARTIST to artist
+                        )
+                    )
+                )
             }
         }
 
         cursor?.close()
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.channel_name)
+            val descriptionText = getString(R.string.channel_description)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel("MusicPlayer", name, importance).apply {
+                description = descriptionText
+            }
+
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
     }
 
     private val READ_STORAGE_CODE = 666

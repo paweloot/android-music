@@ -6,9 +6,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.fragment_songs_list_item.view.*
+import org.json.JSONArray
 
 
-class SongsRecyclerViewAdapter(val data: List<Song>, private val onSongClickListener: OnSongClickListener) :
+class SongsRecyclerViewAdapter(val data: JSONArray, private val onSongClickListener: OnSongClickListener) :
     RecyclerView.Adapter<SongsRecyclerViewAdapter.SongViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
@@ -19,15 +20,15 @@ class SongsRecyclerViewAdapter(val data: List<Song>, private val onSongClickList
     }
 
     override fun onBindViewHolder(holder: SongViewHolder, position: Int) {
-        val song = data[position]
+        val song = data.getJSONObject(position)
 
         holder.apply {
-            setSongTitle(song.title)
-            setSongArtist(song.artist)
+            setSongTitle(song.getString(TITLE))
+            setSongArtist(song.getString(ARTIST))
         }
     }
 
-    override fun getItemCount(): Int = data.size
+    override fun getItemCount(): Int = data.length()
 
     inner class SongViewHolder(private val view: View, private val onSongClickListener: OnSongClickListener) :
         RecyclerView.ViewHolder(view), View.OnClickListener {

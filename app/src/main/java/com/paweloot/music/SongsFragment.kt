@@ -3,15 +3,11 @@ package com.paweloot.music
 import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.fragment_songs_list.*
 import kotlinx.android.synthetic.main.fragment_songs_list.view.*
 
 
@@ -26,7 +22,7 @@ class SongsFragment : Fragment(), SongsRecyclerViewAdapter.OnSongClickListener {
         val view = inflater.inflate(R.layout.fragment_songs_list, container, false)
 
         viewManager = LinearLayoutManager(context)
-        viewAdapter = SongsRecyclerViewAdapter((activity as MainActivity).songsList, this)
+        viewAdapter = SongsRecyclerViewAdapter((activity as MainActivity).songsData, this)
 
         view.songs_recycler_view.layoutManager = viewManager
         view.songs_recycler_view.adapter = viewAdapter
