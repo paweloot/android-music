@@ -10,44 +10,38 @@ class SongsDataManager(val context: Context) {
     private val SHARED_PREFS_SONGS = "com.paweloot.music.SHARED_PREFS_SONGS"
     private val SONGS_DATA = "SONGS_DATA"
     private val CURRENT_SONG_INDEX = "CURRENT_SONG_INDEX"
-    private lateinit var sharedPreferences: SharedPreferences
 
     fun saveSongsData(songsData: JSONArray) {
-        sharedPreferences = context.getSharedPreferences(SHARED_PREFS_SONGS, Context.MODE_PRIVATE)
-
-        sharedPreferences.edit {
+        getSharedPrefs().edit {
             putString(SONGS_DATA, songsData.toString())
             apply()
         }
     }
 
     fun loadSongsData(): JSONArray {
-        sharedPreferences = context.getSharedPreferences(SHARED_PREFS_SONGS, Context.MODE_PRIVATE)
-
-        return JSONArray(sharedPreferences.getString(SONGS_DATA, null))
+        val songsData = getSharedPrefs().getString(SONGS_DATA, null)
+        return if (songsData == null) JSONArray() else JSONArray(songsData)
     }
 
     fun saveCurrentSongIndex(index: Int) {
-        sharedPreferences = context.getSharedPreferences(SHARED_PREFS_SONGS, Context.MODE_PRIVATE)
-
-        sharedPreferences.edit {
+        getSharedPrefs().edit {
             putInt(CURRENT_SONG_INDEX, index)
             apply()
         }
     }
 
     fun loadCurrentSongIndex(): Int {
-        sharedPreferences = context.getSharedPreferences(SHARED_PREFS_SONGS, Context.MODE_PRIVATE)
-
-        return sharedPreferences.getInt(CURRENT_SONG_INDEX, -1)
+        return getSharedPrefs().getInt(CURRENT_SONG_INDEX, -1)
     }
 
     fun clearSongsData() {
-        sharedPreferences = context.getSharedPreferences(SHARED_PREFS_SONGS, Context.MODE_PRIVATE)
-
-        sharedPreferences.edit {
+        getSharedPrefs().edit {
             clear()
             commit()
         }
+    }
+
+    private fun getSharedPrefs(): SharedPreferences {
+        return context.getSharedPreferences(SHARED_PREFS_SONGS, Context.MODE_PRIVATE)
     }
 }

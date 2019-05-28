@@ -20,7 +20,7 @@
                 android:layout_height="wrap_content"
                 app:layout_constraintStart_toStartOf="parent"
                 tools:text="Afraid To Shoot Strangers"
-                style="@style/TextAppearance.AppCompat.Title"
+                style="@style/TextAppearance.AppCompat.Subhead"
                 app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginStart="8dp"

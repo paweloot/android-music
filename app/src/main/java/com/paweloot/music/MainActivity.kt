@@ -9,16 +9,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.opengl.Visibility
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
-import android.provider.MediaStore
 import android.provider.MediaStore.Audio
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentManager
 import com.paweloot.music.MusicPlayerService.LocalBinder
 import org.json.JSONArray
 import org.json.JSONObject
@@ -28,7 +26,7 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
     val songsData: JSONArray = JSONArray()
     private val albumsData: HashMap<Int, String?> = HashMap()
-    private lateinit var musicPlayerService: MusicPlayerService
+    lateinit var musicPlayerService: MusicPlayerService
     private var isServiceBound: Boolean = false
 
     private val serviceConnection = object : ServiceConnection {
@@ -36,8 +34,6 @@ class MainActivity : AppCompatActivity() {
             val binder = service as LocalBinder
             musicPlayerService = binder.service
             isServiceBound = true
-
-            Toast.makeText(this@MainActivity, "Service Bound", Toast.LENGTH_SHORT).show()
         }
 
         override fun onServiceDisconnected(name: ComponentName) {
@@ -49,11 +45,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val fragmentManager = supportFragmentManager
+        fragmentManager.beginTransaction()
+            .add(R.id.main_fragment_container, SongsFragment())
+            .commit()
+
         createNotificationChannel()
         checkReadStoragePermission()
         loadSongs()
         loadAlbumCovers()
-        joinSongsDataAndAlbumCovers()
+        appendAlbumArtsToSongs()
     }
 
     fun playSong(songIndex: Int) {
@@ -73,6 +74,16 @@ class MainActivity : AppCompatActivity() {
             val broadcast = Intent(BROADCAST_PLAY_NEW_SONG)
             sendBroadcast(broadcast)
         }
+
+        createPlayingFragment()
+    }
+
+    private fun createPlayingFragment() {
+        val fragmentManager = supportFragmentManager
+        fragmentManager.beginTransaction()
+            .replace(R.id.main_fragment_container, PlayingFragment(SongsDataManager(this)))
+            .addToBackStack(null)
+            .commit()
     }
 
     override fun onDestroy() {
@@ -166,7 +177,7 @@ class MainActivity : AppCompatActivity() {
         cursor?.close()
     }
 
-    private fun joinSongsDataAndAlbumCovers() {
+    private fun appendAlbumArtsToSongs() {
         for (i in 0 until songsData.length()) {
             val song = songsData.getJSONObject(i)
             val albumId = song.getString(ALBUM_ID)
@@ -176,20 +187,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = getString(R.string.channel_name)
-            val descriptionText = getString(R.string.channel_description)
-            val importance = NotificationManager.IMPORTANCE_DEFAULT
-            val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
-                description = descriptionText
-                setShowBadge(false)
-                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
-            }
-
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+        val name = getString(R.string.channel_name)
+        val descriptionText = getString(R.string.channel_description)
+        val importance = NotificationManager.IMPORTANCE_DEFAULT
+        val channel = NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance).apply {
+            description = descriptionText
+            setShowBadge(false)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
+
+        val notificationManager: NotificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
     }
 
     private val READ_STORAGE_CODE = 666

@@ -31,17 +31,6 @@ class SongsFragment : Fragment(), SongsRecyclerViewAdapter.OnSongClickListener {
     }
 
     override fun onSongClick(position: Int) {
-//        Toast.makeText(context, "Clicked on $position!", Toast.LENGTH_SHORT).show()
         (activity as MainActivity).playSong(position)
-    }
-
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-
-    }
-
-    override fun onDetach() {
-        super.onDetach()
-
     }
 }
