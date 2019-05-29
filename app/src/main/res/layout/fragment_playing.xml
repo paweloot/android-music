@@ -41,22 +41,22 @@
             android:textAlignment="center" app:layout_constraintTop_toBottomOf="@+id/playing_title"
             android:layout_marginTop="8dp"/>
     <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
             android:id="@+id/playing_play_pause_btn"
-            android:background="@drawable/ic_pause_white"
+            android:background="@drawable/ic_pause_circle_filled_white"
             app:layout_constraintTop_toBottomOf="@+id/playing_artist" app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"/>
     <Button
-            android:layout_width="wrap_content"
+            android:layout_width="60dp"
             android:layout_height="wrap_content"
             android:id="@+id/playing_skip_btn"
             app:layout_constraintTop_toBottomOf="@+id/playing_artist" app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toEndOf="@+id/playing_play_pause_btn"
             app:layout_constraintHorizontal_bias="0.3" android:background="@drawable/ic_skip_next_white"/>
     <Button
-            android:layout_width="wrap_content"
+            android:layout_width="60dp"
             android:layout_height="wrap_content"
             android:id="@+id/playing_previous_btn" app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/playing_artist" app:layout_constraintBottom_toBottomOf="parent"

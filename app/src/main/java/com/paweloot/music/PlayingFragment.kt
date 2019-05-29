@@ -22,25 +22,7 @@ class PlayingFragment(private val songsDataManager: SongsDataManager) : Fragment
         val inflatedView = inflater.inflate(R.layout.fragment_playing, container, false)
 
         setCurrentSongData(inflatedView)
-
-        inflatedView.playing_play_pause_btn.setOnClickListener {
-            val musicPlayerService = (activity as MainActivity).musicPlayerService
-
-            when (currentState) {
-                STATE_PLAYING -> {
-                    musicPlayerService.pauseSong()
-                    inflatedView.playing_play_pause_btn.setBackgroundResource(R.drawable.ic_play_arrow_white)
-                    currentState = STATE_PAUSED
-                }
-                STATE_PAUSED -> {
-                    musicPlayerService.resumePlayingSong()
-                    inflatedView.playing_play_pause_btn.setBackgroundResource(R.drawable.ic_pause_white)
-                    currentState = STATE_PLAYING
-                }
-            }
-
-        }
-
+        setButtonsOnClicks(inflatedView)
 
         return inflatedView
     }
@@ -61,4 +43,51 @@ class PlayingFragment(private val songsDataManager: SongsDataManager) : Fragment
         }
     }
 
+    private fun setButtonsOnClicks(view: View) {
+        setPlayPauseButtonOnClick(view)
+        setSkipButtonOnClick(view)
+        setPreviousButtonOnClick(view)
+    }
+
+    private fun setPlayPauseButtonOnClick(view: View) {
+        view.playing_play_pause_btn.setOnClickListener {
+            val musicPlayerService = (activity as MainActivity).musicPlayerService
+
+            when (currentState) {
+                STATE_PLAYING -> {
+                    musicPlayerService.pauseSong()
+                    view.playing_play_pause_btn.setBackgroundResource(R.drawable.ic_play_circle_filled_white)
+                    currentState = STATE_PAUSED
+                }
+                STATE_PAUSED -> {
+                    musicPlayerService.resumePlayingSong()
+                    view.playing_play_pause_btn.setBackgroundResource(R.drawable.ic_pause_circle_filled_white)
+                    currentState = STATE_PLAYING
+                }
+            }
+
+        }
+    }
+
+    private fun setSkipButtonOnClick(view: View) {
+        view.playing_skip_btn.setOnClickListener {
+            val musicPlayerService = (activity as MainActivity).musicPlayerService
+
+            musicPlayerService.skipToNext()
+            setCurrentSongData(view)
+            currentState = STATE_PLAYING
+            view.playing_play_pause_btn.setBackgroundResource(R.drawable.ic_pause_circle_filled_white)
+        }
+    }
+
+    private fun setPreviousButtonOnClick(view: View) {
+        view.playing_previous_btn.setOnClickListener {
+            val musicPlayerService = (activity as MainActivity).musicPlayerService
+
+            musicPlayerService.skipToPrevious()
+            setCurrentSongData(view)
+            currentState = STATE_PLAYING
+            view.playing_play_pause_btn.setBackgroundResource(R.drawable.ic_pause_circle_filled_white)
+        }
+    }
 }
